@@ -1,0 +1,34 @@
+name: Continuous Integration
+
+on: push
+
+jobs:
+  build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [14, 16, 18]
+
+    name: Build and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.version }}
+      - run: yarn install --immutable
+      - run: yarn build
+      - run: yarn lint
+      - run: yarn test
+        env:
+          CI: true
+          DD_SERVICE: apprun
+          DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
+          DD_CIVISIBILITY_GIT_UPLOAD_ENABLED: 1
+          DD_CIVISIBILITY_ITR_ENABLED: 1
+          DD_API_KEY: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
+          DD_APP_KEY: ${{ secrets.DATADOG_APP_KEY_MAIN_ACCOUNT }}
+          DD_ENV: ci
+          NODE_OPTIONS: -r dd-trace/ci/init
